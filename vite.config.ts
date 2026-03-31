@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 export default defineConfig({
+  base: '/PWRLFT/',
   plugins: [
     vue(),
     VitePWA({
@@ -15,8 +16,8 @@ export default defineConfig({
         theme_color: '#000000',
         background_color: '#000000',
         display: 'standalone',
-        scope: '/',
-        start_url: '/',
+        scope: '/PWRLFT/',
+        start_url: '/PWRLFT/',
         icons: [
           {
             src: '/icon-192.png',
