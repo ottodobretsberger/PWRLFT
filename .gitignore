@@ -23,7 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 
-# PWA
-sw.js
-workbox-*.js
-manifest.webmanifest

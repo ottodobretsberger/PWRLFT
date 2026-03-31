@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "deploy": "npx vite build && npx gh-pages -d dist"
+    "deploy": "npx vite build && npx gh-pages -d dist --dotfiles"
   },
   "dependencies": {
     "chart.js": "^4.4.1",
