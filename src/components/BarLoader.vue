@@ -6,7 +6,7 @@
 
     <!-- Input Section -->
     <div class="card">
-      <div class="grid md:grid-cols-3 gap-4 items-end">
+      <div class="grid md:grid-cols-4 gap-4 items-end">
         <div>
           <label class="block text-sm text-gray-400 mb-2 font-semibold">Total Weight</label>
           <input 
@@ -24,6 +24,14 @@
             <option value="lbs">Pounds (lbs)</option>
           </select>
         </div>
+        <label class="flex items-center gap-3 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 h-[50px]">
+          <input
+            v-model="useCollars"
+            type="checkbox"
+            class="h-4 w-4 rounded border-gray-500 bg-gray-800 text-red-500 focus:ring-red-500"
+          />
+          <span class="text-sm font-semibold text-gray-300">Use collars</span>
+        </label>
         <button @click="calculateLoad" class="btn-primary w-full py-3">
           Calculate Load
         </button>
@@ -47,7 +55,7 @@
             </p>
           </div>
           <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-            <p class="text-gray-400 text-sm">Bar + Collars</p>
+            <p class="text-gray-400 text-sm">{{ baseWeightLabel }}</p>
             <p class="text-2xl font-bold text-orange-400">{{ baseWeight.toFixed(2) }} {{ selectedUnit }}</p>
           </div>
           <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
@@ -106,7 +114,7 @@
           <div class="pb-2">
             <div class="single-side-guide">
               <div class="barbell-shaft single-side-shaft"></div>
-              <div class="single-side-stack">
+              <div class="single-side-stack" :style="stackScaleStyle">
                 <div class="barbell-sleeve"></div>
                 <div
                   v-for="(plate, idx) in visualPlateStackRight"
@@ -156,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import type { LoaderResult, DistanceUnit } from '../types'
 import { useStorage } from '../utils/storage'
 import { convertWeight } from '../utils/calculations'
@@ -166,7 +174,38 @@ const inventory = ref(getInventory())
 
 const targetWeight = ref(100)
 const selectedUnit = ref<DistanceUnit>('kg')
+const useCollars = ref(true)
 const result = ref<LoaderResult | null>(null)
+const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200)
+const updateViewportWidth = () => {
+  viewportWidth.value = window.innerWidth
+}
+
+const widthMap: Record<number, number> = {
+  0.5: 6,
+  1.25: 8,
+  2.5: 10,
+  5: 12,
+  10: 15,
+  15: 18,
+  20: 20,
+  25: 22,
+  35: 18,
+  45: 20
+}
+
+const heightMap: Record<number, number> = {
+  0.5: 58,
+  1.25: 74,
+  2.5: 92,
+  5: 118,
+  10: 152,
+  15: 152,
+  20: 152,
+  25: 152,
+  35: 144,
+  45: 152
+}
 
 const activePlates = computed(() => {
   return selectedUnit.value === 'kg' ? inventory.value.kiloPlates : inventory.value.poundPlates
@@ -175,8 +214,10 @@ const activePlates = computed(() => {
 const baseWeight = computed(() => {
   const barWeight = selectedUnit.value === 'kg' ? inventory.value.barWeight.kg : inventory.value.barWeight.lbs
   const collarWeight = selectedUnit.value === 'kg' ? inventory.value.collarWeight.kg : inventory.value.collarWeight.lbs
-  return barWeight + collarWeight * 2
+  return barWeight + (useCollars.value ? collarWeight * 2 : 0)
 })
+
+const baseWeightLabel = computed(() => (useCollars.value ? 'Bar + Collars' : 'Bar Only'))
 
 const plateWeightPerSide = computed(() => {
   return Math.max((targetWeight.value - baseWeight.value) / 2, 0)
@@ -203,37 +244,27 @@ const visualPlateStack = computed(() => {
 
 const visualPlateStackRight = computed(() => [...visualPlateStack.value])
 
+const estimatedStackWidth = computed(() => {
+  const sleeveWidth = viewportWidth.value < 900 ? 28 : 38
+  return visualPlateStackRight.value.reduce((total, plate) => total + (widthMap[plate.weight] ?? 18) + 2, sleeveWidth)
+})
+
+const stackScale = computed(() => {
+  const targetMaxWidth = viewportWidth.value < 640 ? 205 : viewportWidth.value < 900 ? 250 : 360
+  const rawScale = targetMaxWidth / estimatedStackWidth.value
+  return Math.max(0.55, Math.min(1, rawScale))
+})
+
+const stackScaleStyle = computed(() => ({
+  transform: `scale(${stackScale.value})`,
+  transformOrigin: 'left center'
+}))
+
 const formatPlateLabel = (weight: number) => {
   return Number.isInteger(weight) ? weight.toFixed(0) : weight.toString()
 }
 
 const getPlateStyle = (weight: number, color: string) => {
-  const widthMap: Record<number, number> = {
-    0.5: 6,
-    1.25: 8,
-    2.5: 10,
-    5: 12,
-    10: 15,
-    15: 18,
-    20: 20,
-    25: 22,
-    35: 18,
-    45: 20
-  }
-
-  const heightMap: Record<number, number> = {
-    0.5: 58,
-    1.25: 74,
-    2.5: 92,
-    5: 118,
-    10: 152,
-    15: 152,
-    20: 152,
-    25: 152,
-    35: 144,
-    45: 152
-  }
-
   return {
     backgroundColor: color,
     width: `${widthMap[weight] ?? 18}px`,
@@ -307,6 +338,18 @@ const calculateLoad = () => {
 
 watch(() => selectedUnit.value, () => {
   result.value = null
+})
+
+watch(() => useCollars.value, () => {
+  result.value = null
+})
+
+onMounted(() => {
+  window.addEventListener('resize', updateViewportWidth)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewportWidth)
 })
 </script>
 
