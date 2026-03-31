@@ -29,12 +29,12 @@
         <h3 class="text-xl font-semibold mb-4 text-yellow-400">Collar Weight</h3>
         <div class="space-y-3">
           <div>
-            <label class="block text-sm text-gray-400 mb-2">Kilograms (combined collar weight)</label>
-            <input v-model.number="inventory.collarWeight.kg" type="number" step="0.1" class="input-field w-full" placeholder="e.g., 2.5" />
+            <label class="block text-sm text-gray-400 mb-2">Kilograms (each collar)</label>
+            <input v-model.number="inventory.collarWeight.kg" type="number" step="0.1" class="input-field w-full" placeholder="e.g., 1.25" />
           </div>
           <div>
-            <label class="block text-sm text-gray-400 mb-2">Pounds (combined collar weight)</label>
-            <input v-model.number="inventory.collarWeight.lbs" type="number" step="0.1" class="input-field w-full" placeholder="e.g., 5.5" />
+            <label class="block text-sm text-gray-400 mb-2">Pounds (each collar)</label>
+            <input v-model.number="inventory.collarWeight.lbs" type="number" step="0.1" class="input-field w-full" placeholder="e.g., 2.75" />
           </div>
         </div>
       </div>

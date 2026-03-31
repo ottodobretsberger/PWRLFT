@@ -1,5 +1,9 @@
 import type { Inventory, WorkoutSession } from '../types'
 
+type StoredInventory = Partial<Inventory> & {
+  collarWeightMode?: 'combined' | 'per-collar'
+}
+
 const STORAGE_KEYS = {
   INVENTORY: 'pwrlft_inventory',
   WORKOUTS: 'pwrlft_workouts',
@@ -51,16 +55,27 @@ const isLegacyInventory = (inventory: Partial<Inventory>) => {
   return kiloWeights.includes(16) || kiloWeights.includes(2)
 }
 
-const normalizeInventory = (inventory?: Partial<Inventory>): Inventory => {
+const normalizeInventory = (inventory?: StoredInventory): Inventory => {
   if (!inventory) {
     return DEFAULT_INVENTORY
   }
 
   const legacyInventory = isLegacyInventory(inventory)
+  const collarsAlreadyPerCollar = inventory.collarWeightMode === 'per-collar'
   const normalizedCollars = inventory.collarWeight
     ? {
-        kg: legacyInventory && inventory.collarWeight.kg === 2.5 ? 0 : inventory.collarWeight.kg,
-        lbs: legacyInventory && inventory.collarWeight.lbs === 5.5 ? 0 : inventory.collarWeight.lbs
+        kg:
+          legacyInventory && inventory.collarWeight.kg === 2.5
+            ? 0
+            : collarsAlreadyPerCollar
+            ? inventory.collarWeight.kg
+            : inventory.collarWeight.kg / 2,
+        lbs:
+          legacyInventory && inventory.collarWeight.lbs === 5.5
+            ? 0
+            : collarsAlreadyPerCollar
+            ? inventory.collarWeight.lbs
+            : inventory.collarWeight.lbs / 2
       }
     : DEFAULT_INVENTORY.collarWeight
 
@@ -79,18 +94,28 @@ export const useStorage = () => {
       return DEFAULT_INVENTORY
     }
 
-    const parsed = JSON.parse(stored) as Partial<Inventory>
+    const parsed = JSON.parse(stored) as StoredInventory
     const normalized = normalizeInventory(parsed)
+    const normalizedWithMode: Inventory & { collarWeightMode: 'per-collar' } = {
+      ...normalized,
+      collarWeightMode: 'per-collar'
+    }
 
-    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
-      localStorage.setItem(STORAGE_KEYS.INVENTORY, JSON.stringify(normalized))
+    if (JSON.stringify(parsed) !== JSON.stringify(normalizedWithMode)) {
+      localStorage.setItem(STORAGE_KEYS.INVENTORY, JSON.stringify(normalizedWithMode))
     }
 
     return normalized
   }
 
   const saveInventory = (inventory: Inventory): void => {
-    localStorage.setItem(STORAGE_KEYS.INVENTORY, JSON.stringify(inventory))
+    localStorage.setItem(
+      STORAGE_KEYS.INVENTORY,
+      JSON.stringify({
+        ...inventory,
+        collarWeightMode: 'per-collar'
+      })
+    )
   }
 
   const getWorkouts = (): WorkoutSession[] => {

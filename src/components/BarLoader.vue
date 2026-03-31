@@ -103,8 +103,8 @@
         </div>
 
         <div class="rounded-xl border border-gray-700 bg-gradient-to-b from-gray-950 to-gray-900 p-4 md:p-6">
-          <div class="overflow-x-auto pb-2">
-            <div class="single-side-guide min-w-[760px]">
+          <div class="pb-2">
+            <div class="single-side-guide">
               <div class="barbell-shaft single-side-shaft"></div>
               <div class="single-side-stack">
                 <div class="barbell-sleeve"></div>
@@ -175,7 +175,7 @@ const activePlates = computed(() => {
 const baseWeight = computed(() => {
   const barWeight = selectedUnit.value === 'kg' ? inventory.value.barWeight.kg : inventory.value.barWeight.lbs
   const collarWeight = selectedUnit.value === 'kg' ? inventory.value.collarWeight.kg : inventory.value.collarWeight.lbs
-  return barWeight + collarWeight
+  return barWeight + collarWeight * 2
 })
 
 const plateWeightPerSide = computed(() => {
@@ -315,6 +315,7 @@ watch(() => selectedUnit.value, () => {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
   min-height: 220px;
 }
 
@@ -327,13 +328,14 @@ watch(() => selectedUnit.value, () => {
 }
 
 .single-side-shaft {
-  flex: 1;
-  min-width: 260px;
+  flex: 1 1 auto;
+  min-width: 140px;
 }
 
 .single-side-stack {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   min-height: 180px;
 }
 
@@ -460,11 +462,16 @@ watch(() => selectedUnit.value, () => {
 
 @media (max-width: 900px) {
   .single-side-guide {
-    min-height: 190px;
+    min-height: 170px;
   }
 
   .single-side-shaft {
-    min-width: 180px;
+    min-width: 72px;
+  }
+
+  .barbell-sleeve {
+    width: 28px;
+    height: 22px;
   }
 
   .barbell-plate {
